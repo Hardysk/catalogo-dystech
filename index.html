@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DYSTECH Catálogo</title>
+
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+</head>
+<body>
+
+  <header class="header">
+    <h1>DYSTECH</h1>
+    <p>Catálogo de productos</p>
+  </header>
+
+  <main class="container">
+
+    <!-- BUSCADOR -->
+    <div class="search-box">
+      <input
+        type="text"
+        id="searchInput"
+        placeholder="Buscar producto..."
+      >
+    </div>
+
+    <!-- PRODUCTOS -->
+    <div id="productosGrid" class="productos-grid">
+
+      <!-- CARD -->
+      <!-- Se llena dinámicamente -->
+
+    </div>
+
+  </main>
+
+  <script src="app.js"></script>
+
+</body>
+</html>
