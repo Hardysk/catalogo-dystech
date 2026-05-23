@@ -1,6 +1,6 @@
 /* ========================================
    DYSTECH Catálogo – Application Logic
-   ======================================== */
+======================================== */
 
 // ─── Supabase Config ───
 const SUPABASE_URL = 'https://qtxxgapxvlwapeaxhige.supabase.co';
@@ -23,11 +23,18 @@ const productCount  = document.getElementById('productCount');
 // Search
 const searchInput = document.getElementById('searchInput');
 
+// ─── MENU LATERAL ───
+const menuToggle  = document.getElementById('menuToggle');
+const navMenu     = document.getElementById('navMenu');
+const navBackdrop = document.getElementById('navBackdrop');
+
 // Filtros
 const filtroLista        = document.getElementById('filtroLista');
 const filtroCategoria    = document.getElementById('filtroCategoria');
 const filtroSubcategoria = document.getElementById('filtroSubcategoria');
-const filtrosActivos     = document.getElementById('filtrosActivos');
+
+const limpiarFiltrosBtn =
+  document.getElementById('limpiarFiltros');
 
 // Modal
 const modalOverlay = document.getElementById('modalOverlay');
@@ -93,6 +100,42 @@ async function init() {
   bindEvents();
 }
 
+// ─── MENU LATERAL ───
+
+function abrirMenu() {
+
+  navMenu.classList.add('open');
+
+  navBackdrop.classList.add('open');
+
+  menuToggle.classList.add('open');
+
+  document.body.style.overflow = 'hidden';
+}
+
+function cerrarMenu() {
+
+  navMenu.classList.remove('open');
+
+  navBackdrop.classList.remove('open');
+
+  menuToggle.classList.remove('open');
+
+  document.body.style.overflow = '';
+}
+
+function toggleMenu() {
+
+  if (navMenu.classList.contains('open')) {
+
+    cerrarMenu();
+
+  } else {
+
+    abrirMenu();
+  }
+}
+
 // ─── Cargar Productos ───
 
 async function cargarProductos() {
@@ -151,6 +194,10 @@ function construirFiltros() {
   });
 
   actualizarCategorias();
+
+  // Inicializar el menú horizontal y pills
+  renderListasHorizontal();
+  actualizarUIFiltros();
 }
 
 // ─── Categorías ───
@@ -302,61 +349,8 @@ function filtrarProductos() {
     );
   }
 
-  renderFiltrosActivos();
-
   renderProductos(filtrados);
-}
-
-// ─── Filtros Activos ───
-
-function renderFiltrosActivos() {
-
-  filtrosActivos.innerHTML = '';
-
-  const filtros = [
-    filtroLista.value,
-    filtroCategoria.value,
-    filtroSubcategoria.value
-  ].filter(Boolean);
-
-  filtros.forEach(filtro => {
-
-    const chip = document.createElement('div');
-
-    chip.className = 'filtro-chip';
-
-    chip.innerHTML = `
-      ${filtro}
-      <span>✕</span>
-    `;
-
-    chip.addEventListener('click', () => {
-
-      if (filtro === filtroLista.value) {
-
-        filtroLista.value = '';
-        filtroCategoria.value = '';
-        filtroSubcategoria.value = '';
-      }
-
-      else if (filtro === filtroCategoria.value) {
-
-        filtroCategoria.value = '';
-        filtroSubcategoria.value = '';
-      }
-
-      else if (filtro === filtroSubcategoria.value) {
-
-        filtroSubcategoria.value = '';
-      }
-
-      actualizarCategorias();
-
-      filtrarProductos();
-    });
-
-    filtrosActivos.appendChild(chip);
-  });
+  actualizarUIFiltros();
 }
 
 // ─── Render Productos ───
@@ -405,10 +399,11 @@ function renderProductos(lista) {
 
         <img
           class="card-img"
-          
+
           src="${obtenerImagenProducto(producto)}"
-          
+
           alt="${producto.nombre || ''}"
+
           loading="lazy"
 
           onerror="
@@ -472,8 +467,6 @@ function abrirModal(producto) {
     modalImg.src =
       `https://placehold.co/500x400/e2e8f0/94a3b8?text=${encodeURIComponent(producto.nombre || 'DYSTECH')}`;
   };
-   // producto.imagen ||
-    //`https://placehold.co/500x400/e2e8f0/94a3b8?text=${encodeURIComponent(producto.nombre || 'DYSTECH')}`;
 
   modalCodigo.textContent =
     producto.codigo || '';
@@ -578,7 +571,6 @@ function agregarAlCarrito() {
 
       maxStock: productoActual.cantidad || 999,
 
-      //imagen: productoActual.imagen || ''
       imagen: obtenerImagenProducto(productoActual)
     });
   }
@@ -652,12 +644,11 @@ function renderCarrito() {
       <img
         class="cart-item-img"
         src="${item.imagen || obtenerImagenProducto(item)}"
-        
+
         onerror="
           this.onerror=null;
           this.src='https://placehold.co/80x80/e2e8f0/94a3b8?text=IMG';
         "
-
       >
 
       <div class="cart-item-info">
@@ -767,16 +758,12 @@ function comprarWhatsApp() {
 
 // ─── Obtener Imagen Producto ───
 
-// ─── Obtener Imagen Producto ───
-
 function obtenerImagenProducto(producto) {
 
-  // Si ya tiene imagen en BD
   if (producto.imagen) {
     return producto.imagen;
   }
 
-  // Intentar imagen local por código
   return `/Imagenes/${producto.codigo}.jpg`;
 }
 
@@ -815,13 +802,50 @@ function mostrarToast(msg) {
 
 function bindEvents() {
 
-  // Search
+  // ─── MENU ───
+
+  menuToggle.addEventListener(
+    'click',
+    toggleMenu
+  );
+
+  navBackdrop.addEventListener(
+    'click',
+    cerrarMenu
+  );
+
+  // ─── LIMPIAR FILTROS ───
+
+  const limpiarTodoAction = () => {
+    filtroLista.value = '';
+    filtroCategoria.value = '';
+    filtroSubcategoria.value = '';
+    searchInput.value = '';
+
+    actualizarCategorias();
+    filtrarProductos();
+
+    renderListasHorizontal();
+    cerrarFiltroDropdown();
+    actualizarUIFiltros();
+  };
+
+  limpiarFiltrosBtn.addEventListener('click', limpiarTodoAction);
+
+  const limpiarFiltrosTopBtn = document.getElementById('limpiarFiltrosTop');
+  if (limpiarFiltrosTopBtn) {
+    limpiarFiltrosTopBtn.addEventListener('click', limpiarTodoAction);
+  }
+
+  // ─── SEARCH ───
+
   searchInput.addEventListener(
     'input',
     filtrarProductos
   );
 
-  // Filtros
+  // ─── FILTROS ───
+
   filtroLista.addEventListener('change', () => {
 
     actualizarCategorias();
@@ -841,7 +865,8 @@ function bindEvents() {
     filtrarProductos
   );
 
-  // Modal
+  // ─── MODAL ───
+
   modalClose.addEventListener(
     'click',
     cerrarModal
@@ -855,7 +880,8 @@ function bindEvents() {
     }
   });
 
-  // Cantidad
+  // ─── CANTIDAD ───
+
   qtyMinus.addEventListener('click', () => {
 
     const val = parseInt(qtyInput.value) || 1;
@@ -878,13 +904,15 @@ function bindEvents() {
     }
   });
 
-  // Agregar carrito
+  // ─── AGREGAR CARRITO ───
+
   addToCartBtn.addEventListener(
     'click',
     agregarAlCarrito
   );
 
-  // Carrito
+  // ─── CARRITO ───
+
   cartBtn.addEventListener(
     'click',
     abrirCarrito
@@ -900,13 +928,63 @@ function bindEvents() {
     cerrarCarrito
   );
 
-  // Checkout
+  // ─── CONTROLES CARRITO ───
+
+  cartItemsCont.addEventListener('click', e => {
+
+    const btnQty = e.target.closest('[data-delta]');
+
+    if (btnQty) {
+
+      const index = parseInt(btnQty.dataset.index);
+
+      const delta = parseInt(btnQty.dataset.delta);
+
+      const item = carrito[index];
+
+      if (!item) return;
+
+      item.cantidad += delta;
+
+      if (item.cantidad <= 0) {
+
+        carrito.splice(index, 1);
+      }
+
+      guardarCarrito();
+
+      actualizarBadgeCarrito();
+
+      renderCarrito();
+
+      return;
+    }
+
+    const btnRemove = e.target.closest('[data-remove]');
+
+    if (btnRemove) {
+
+      const index = parseInt(btnRemove.dataset.remove);
+
+      carrito.splice(index, 1);
+
+      guardarCarrito();
+
+      actualizarBadgeCarrito();
+
+      renderCarrito();
+    }
+  });
+
+  // ─── CHECKOUT ───
+
   checkoutBtn.addEventListener(
     'click',
     comprarWhatsApp
   );
 
-  // Logo
+  // ─── LOGO ───
+
   logoLink.addEventListener('click', e => {
 
     e.preventDefault();
@@ -923,13 +1001,26 @@ function bindEvents() {
 
     filtrarProductos();
 
+    renderListasHorizontal();
+    cerrarFiltroDropdown();
+    actualizarUIFiltros();
+
+    cerrarMenu();
+
     window.scrollTo({
       top: 0,
       behavior: 'smooth'
     });
   });
 
-  // ESC
+  // ─── NAV CLOSE ───
+  const navCloseBtn = document.getElementById('navClose');
+  if (navCloseBtn) {
+    navCloseBtn.addEventListener('click', cerrarMenu);
+  }
+
+  // ─── ESC ───
+
   document.addEventListener('keydown', e => {
 
     if (e.key === 'Escape') {
@@ -943,6 +1034,391 @@ function bindEvents() {
 
         cerrarCarrito();
       }
+
+      if (navMenu.classList.contains('open')) {
+
+        cerrarMenu();
+      }
     }
   });
 }
+
+/* ========================================
+   HORIZONTAL FILTERS LOGIC (MERCADO LIBRE STYLE - JERÁRQUICO)
+======================================== */
+
+let currentOpenList = null;
+let currentOpenCategory = null;
+
+function renderListasHorizontal() {
+  const listaTabs = document.getElementById('listaTabs');
+  if (!listaTabs) return;
+
+  listaTabs.innerHTML = '';
+
+  // Botón para "Todas las listas"
+  const btnTodas = document.createElement('button');
+  btnTodas.className = 'tab-btn' + (!filtroLista.value ? ' active' : '');
+  btnTodas.textContent = 'Todas las listas';
+  btnTodas.addEventListener('click', () => {
+    filtroLista.value = '';
+    filtroLista.dispatchEvent(new Event('change'));
+    cerrarFiltroDropdown();
+    renderListasHorizontal();
+    actualizarUIFiltros();
+  });
+  listaTabs.appendChild(btnTodas);
+
+  // Obtener las listas desde las opciones de filtroLista
+  Array.from(filtroLista.options).forEach(opt => {
+    if (!opt.value) return;
+
+    const btn = document.createElement('button');
+    const isActive = filtroLista.value === opt.value;
+    btn.className = 'tab-btn' + (isActive ? ' active' : '');
+    btn.innerHTML = `
+      <span>${opt.text}</span>
+      <svg class="chevron-down-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="m6 9 6 6 6-6"/>
+      </svg>
+    `;
+
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleListDropdown(opt.value, btn);
+    });
+
+    listaTabs.appendChild(btn);
+  });
+}
+
+function toggleListDropdown(listVal, buttonEl) {
+  const dropdown = document.getElementById('filtroDropdownWrapper');
+  if (!dropdown) return;
+
+  if (currentOpenList === listVal && dropdown.style.display !== 'none') {
+    cerrarFiltroDropdown();
+    return;
+  }
+
+  // Activar la lista en el select original
+  filtroLista.value = listVal;
+  filtroLista.dispatchEvent(new Event('change')); // Esto llama a actualizarCategorias() y filtrarProductos()
+
+  const catOptions = Array.from(filtroCategoria.options).filter(opt => opt.value !== '');
+
+  dropdown.innerHTML = '';
+  currentOpenList = listVal;
+  currentOpenCategory = null;
+
+  // Actualizar estilos activos de los botones horizontales de lista
+  Array.from(document.querySelectorAll('#listaTabs .tab-btn')).forEach(btn => {
+    btn.classList.remove('active');
+    if (btn.textContent.includes(listVal)) {
+      btn.classList.add('active');
+    }
+  });
+
+  // Contenedor principal anidado
+  const container = document.createElement('div');
+  container.className = 'nested-dropdown-container';
+
+  // Panel izquierdo de categorías
+  const catPanel = document.createElement('div');
+  catPanel.className = 'categories-list-panel';
+
+  // Opción "Ver todo en Lista"
+  const allListOption = document.createElement('div');
+  allListOption.className = 'dropdown-item-cat all-option';
+  allListOption.textContent = `Ver todo en ${listVal}`;
+  allListOption.addEventListener('click', () => {
+    filtroCategoria.value = '';
+    filtroSubcategoria.value = '';
+    filtrarProductos();
+    cerrarFiltroDropdown();
+    actualizarUIFiltros();
+  });
+  catPanel.appendChild(allListOption);
+
+  // Panel derecho de subcategorías (Desktop flyout)
+  const subcatPanel = document.createElement('div');
+  subcatPanel.className = 'subcategories-flyout-panel';
+  subcatPanel.id = 'subcatFlyoutPanel';
+  subcatPanel.style.display = 'none';
+
+  // Generar items de categoría
+  catOptions.forEach(opt => {
+    const catItem = document.createElement('div');
+    const isCatActive = filtroCategoria.value === opt.value;
+    catItem.className = 'dropdown-item-cat category-item' + (isCatActive ? ' active' : '');
+    catItem.innerHTML = `
+      <span>${opt.text}</span>
+      <svg class="chevron-right-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="m9 18 6-6-6-6"/>
+      </svg>
+    `;
+
+    // Cargar las subcategorías en el panel correspondiente
+    const loadSubcategories = (e) => {
+      e.stopPropagation();
+      
+      // Marcar categoría activa visualmente en el menú
+      Array.from(catPanel.querySelectorAll('.category-item')).forEach(item => item.classList.remove('open'));
+      catItem.classList.add('open');
+
+      if (window.innerWidth > 1024) {
+        // En escritorio: llenar y mostrar el panel derecho
+        showSubcategoriesFlyout(opt.value, subcatPanel);
+      } else {
+        // En móvil: comportamiento acordeón (expandir verticalmente debajo del item)
+        toggleSubcategoriesAccordion(opt.value, catItem);
+      }
+    };
+
+    catItem.addEventListener('click', loadSubcategories);
+    
+    // Hover en escritorio abre las subcategorías automáticamente
+    if (window.innerWidth > 1024) {
+      catItem.addEventListener('mouseenter', loadSubcategories);
+    }
+
+    catPanel.appendChild(catItem);
+  });
+
+  container.appendChild(catPanel);
+  
+  if (window.innerWidth > 1024) {
+    container.appendChild(subcatPanel);
+  }
+  
+  dropdown.appendChild(container);
+  dropdown.style.display = 'block';
+
+  // Posicionamiento de dropdown
+  if (window.innerWidth > 1024) {
+    const rect = buttonEl.getBoundingClientRect();
+    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+    dropdown.style.position = 'absolute';
+    dropdown.style.top = `${rect.bottom + scrollTop + 8}px`;
+    dropdown.style.left = `${rect.left + scrollLeft}px`;
+    dropdown.style.right = 'auto';
+    dropdown.style.width = 'auto';
+  } else {
+    dropdown.style.position = 'fixed';
+    dropdown.style.bottom = '0';
+    dropdown.style.left = '0';
+    dropdown.style.right = '0';
+    dropdown.style.top = 'auto';
+    dropdown.style.width = '100%';
+    dropdown.style.borderRadius = '24px 24px 0 0';
+  }
+}
+
+function showSubcategoriesFlyout(categoryVal, subcatPanel) {
+  // Configurar select original y recargar subcategorías
+  filtroCategoria.value = categoryVal;
+  actualizarSubcategorias();
+
+  const subOptions = Array.from(filtroSubcategoria.options).filter(opt => opt.value !== '');
+
+  subcatPanel.innerHTML = '';
+
+  // Opción "Ver todo en Categoría"
+  const allCatOption = document.createElement('div');
+  allCatOption.className = 'subcat-item-val all-option';
+  allCatOption.textContent = `Ver todo en ${categoryVal}`;
+  allCatOption.addEventListener('click', () => {
+    filtroCategoria.value = categoryVal;
+    filtroSubcategoria.value = '';
+    filtrarProductos();
+    cerrarFiltroDropdown();
+    actualizarUIFiltros();
+  });
+  subcatPanel.appendChild(allCatOption);
+
+  // Items de subcategoría
+  subOptions.forEach(opt => {
+    const subItem = document.createElement('div');
+    const isSubActive = filtroSubcategoria.value === opt.value;
+    subItem.className = 'subcat-item-val' + (isSubActive ? ' active' : '');
+    subItem.textContent = opt.text;
+    subItem.addEventListener('click', () => {
+      filtroCategoria.value = categoryVal;
+      filtroSubcategoria.value = opt.value;
+      filtrarProductos();
+      cerrarFiltroDropdown();
+      actualizarUIFiltros();
+    });
+    subcatPanel.appendChild(subItem);
+  });
+
+  subcatPanel.style.display = 'block';
+}
+
+function toggleSubcategoriesAccordion(categoryVal, catItemEl) {
+  // Si ya está abierto el acordeón en este item, lo cerramos
+  const existingAccordion = catItemEl.querySelector('.mobile-accordion-panel');
+  if (existingAccordion) {
+    existingAccordion.remove();
+    catItemEl.classList.remove('accordion-open');
+    return;
+  }
+
+  // Cerrar otros acordeones abiertos
+  Array.from(catItemEl.parentNode.querySelectorAll('.mobile-accordion-panel')).forEach(el => el.remove());
+  Array.from(catItemEl.parentNode.querySelectorAll('.category-item')).forEach(el => el.classList.remove('accordion-open'));
+
+  // Cargar subcategorías
+  filtroCategoria.value = categoryVal;
+  actualizarSubcategorias();
+
+  const subOptions = Array.from(filtroSubcategoria.options).filter(opt => opt.value !== '');
+
+  const accordionPanel = document.createElement('div');
+  accordionPanel.className = 'mobile-accordion-panel';
+  accordionPanel.addEventListener('click', e => e.stopPropagation()); // Evitar click en padre
+
+  // Opción "Ver todo en Categoría"
+  const allCatOption = document.createElement('div');
+  allCatOption.className = 'accordion-subcat-item all-option';
+  allCatOption.textContent = `Ver todo en ${categoryVal}`;
+  allCatOption.addEventListener('click', () => {
+    filtroCategoria.value = categoryVal;
+    filtroSubcategoria.value = '';
+    filtrarProductos();
+    cerrarFiltroDropdown();
+    actualizarUIFiltros();
+  });
+  accordionPanel.appendChild(allCatOption);
+
+  // Items de subcategoría
+  subOptions.forEach(opt => {
+    const subItem = document.createElement('div');
+    const isSubActive = filtroSubcategoria.value === opt.value;
+    subItem.className = 'accordion-subcat-item' + (isSubActive ? ' active' : '');
+    subItem.textContent = opt.text;
+    subItem.addEventListener('click', () => {
+      filtroCategoria.value = categoryVal;
+      filtroSubcategoria.value = opt.value;
+      filtrarProductos();
+      cerrarFiltroDropdown();
+      actualizarUIFiltros();
+    });
+    accordionPanel.appendChild(subItem);
+  });
+
+  catItemEl.appendChild(accordionPanel);
+  catItemEl.classList.add('accordion-open');
+}
+
+function cerrarFiltroDropdown() {
+  const dropdown = document.getElementById('filtroDropdownWrapper');
+  if (dropdown) {
+    dropdown.style.display = 'none';
+  }
+  currentOpenList = null;
+  currentOpenCategory = null;
+}
+
+function actualizarUIFiltros() {
+  const wrapper = document.getElementById('activeFiltersWrapper');
+  const pillsCont = document.getElementById('activeFiltersPills');
+  const badge = document.getElementById('filterBadge');
+  const limpiarBtn = document.getElementById('limpiarFiltros');
+
+  if (!wrapper || !pillsCont) return;
+
+  pillsCont.innerHTML = '';
+  let activeCount = 0;
+
+  // 1. Búsqueda
+  const searchVal = searchInput.value.trim();
+  if (searchVal) {
+    activeCount++;
+    createFilterPill(pillsCont, `Buscar: "${searchVal}"`, () => {
+      searchInput.value = '';
+      filtrarProductos();
+      actualizarUIFiltros();
+    });
+  }
+
+  // 2. Lista
+  if (filtroLista.value) {
+    activeCount++;
+    createFilterPill(pillsCont, `Lista: ${filtroLista.value}`, () => {
+      filtroLista.value = '';
+      filtroLista.dispatchEvent(new Event('change'));
+      renderListasHorizontal();
+      actualizarUIFiltros();
+    });
+  }
+
+  // 3. Categoría
+  if (filtroCategoria.value) {
+    activeCount++;
+    createFilterPill(pillsCont, `Categoría: ${filtroCategoria.value}`, () => {
+      filtroCategoria.value = '';
+      filtroCategoria.dispatchEvent(new Event('change'));
+      actualizarUIFiltros();
+    });
+  }
+
+  // 4. Subcategoría
+  if (filtroSubcategoria.value) {
+    activeCount++;
+    createFilterPill(pillsCont, `Subcategoría: ${filtroSubcategoria.value}`, () => {
+      filtroSubcategoria.value = '';
+      filtroSubcategoria.dispatchEvent(new Event('change'));
+      actualizarUIFiltros();
+    });
+  }
+
+  // Controlar visibilidad del wrapper y badge
+  if (activeCount > 0) {
+    wrapper.style.display = 'flex';
+    if (limpiarBtn) limpiarBtn.style.display = 'block';
+    if (badge) {
+      badge.textContent = activeCount;
+      badge.style.display = 'flex';
+    }
+  } else {
+    wrapper.style.display = 'none';
+    if (limpiarBtn) limpiarBtn.style.display = 'none';
+    if (badge) {
+      badge.style.display = 'none';
+    }
+  }
+}
+
+function createFilterPill(container, labelText, onRemove) {
+  const pill = document.createElement('div');
+  pill.className = 'filter-pill';
+
+  const label = document.createElement('span');
+  label.textContent = labelText;
+  pill.appendChild(label);
+
+  const removeBtn = document.createElement('button');
+  removeBtn.className = 'remove-pill-btn';
+  removeBtn.ariaLabel = 'Eliminar filtro';
+  removeBtn.innerHTML = '✕';
+  removeBtn.addEventListener('click', onRemove);
+  pill.appendChild(removeBtn);
+
+  container.appendChild(pill);
+}
+
+// Cerrar dropdown si se hace click fuera
+document.addEventListener('click', (e) => {
+  const dropdown = document.getElementById('filtroDropdownWrapper');
+  if (!dropdown) return;
+
+  const isClickInsideDropdown = dropdown.contains(e.target);
+  const isClickOnTabBtn = e.target.closest('#listaTabs .tab-btn');
+
+  if (!isClickInsideDropdown && !isClickOnTabBtn) {
+    cerrarFiltroDropdown();
+  }
+});
