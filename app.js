@@ -544,35 +544,63 @@ function agregarAlCarrito() {
 
   if (!productoActual) return;
 
-  const cantidad =
-    parseInt(qtyInput.value) || 1;
+  let cantidad = parseInt(qtyInput.value) || 1;
+  if (cantidad < 1) {
+    cantidad = 1;
+    qtyInput.value = 1;
+  }
+
+  const stockDisponible = productoActual.cantidad !== undefined ? productoActual.cantidad : 999;
+
+  if (cantidad > stockDisponible) {
+    cantidad = stockDisponible;
+    qtyInput.value = stockDisponible;
+  }
 
   const existente = carrito.find(
     item => item.id === productoActual.id
   );
 
-  if (existente) {
+  const cantExistente = existente ? existente.cantidad : 0;
+  const totalACargar = cantExistente + cantidad;
 
-    existente.cantidad += cantidad;
-
+  if (totalACargar > stockDisponible) {
+    const maxPermitido = stockDisponible - cantExistente;
+    if (maxPermitido <= 0) {
+      mostrarToast(`No hay más stock disponible. Ya tienes ${cantExistente} en el carrito.`);
+      cerrarModal();
+      return;
+    } else {
+      if (existente) {
+        existente.cantidad = stockDisponible;
+      } else {
+        carrito.push({
+          id: productoActual.id,
+          codigo: productoActual.codigo,
+          nombre: productoActual.nombre,
+          precio: productoActual.precio || 0,
+          cantidad: stockDisponible,
+          maxStock: stockDisponible,
+          imagen: obtenerImagenProducto(productoActual)
+        });
+      }
+      mostrarToast(`Solo se agregaron ${maxPermitido} unidades más. Límite de stock alcanzado.`);
+    }
   } else {
-
-    carrito.push({
-
-      id: productoActual.id,
-
-      codigo: productoActual.codigo,
-
-      nombre: productoActual.nombre,
-
-      precio: productoActual.precio || 0,
-
-      cantidad: cantidad,
-
-      maxStock: productoActual.cantidad || 999,
-
-      imagen: obtenerImagenProducto(productoActual)
-    });
+    if (existente) {
+      existente.cantidad += cantidad;
+    } else {
+      carrito.push({
+        id: productoActual.id,
+        codigo: productoActual.codigo,
+        nombre: productoActual.nombre,
+        precio: productoActual.precio || 0,
+        cantidad: cantidad,
+        maxStock: stockDisponible,
+        imagen: obtenerImagenProducto(productoActual)
+      });
+    }
+    mostrarToast(`"${productoActual.nombre}" agregado al carrito`);
   }
 
   guardarCarrito();
@@ -580,10 +608,6 @@ function agregarAlCarrito() {
   actualizarBadgeCarrito();
 
   cerrarModal();
-
-  mostrarToast(
-    `"${productoActual.nombre}" agregado al carrito`
-  );
 }
 
 function guardarCarrito() {
@@ -816,20 +840,6 @@ function bindEvents() {
 
   // ─── LIMPIAR FILTROS ───
 
-  const limpiarTodoAction = () => {
-    filtroLista.value = '';
-    filtroCategoria.value = '';
-    filtroSubcategoria.value = '';
-    searchInput.value = '';
-
-    actualizarCategorias();
-    filtrarProductos();
-
-    renderListasHorizontal();
-    cerrarFiltroDropdown();
-    actualizarUIFiltros();
-  };
-
   limpiarFiltrosBtn.addEventListener('click', limpiarTodoAction);
 
   const limpiarFiltrosTopBtn = document.getElementById('limpiarFiltrosTop');
@@ -944,6 +954,14 @@ function bindEvents() {
 
       if (!item) return;
 
+      if (delta > 0) {
+        const stockMaximo = item.maxStock !== undefined ? item.maxStock : 999;
+        if (item.cantidad + delta > stockMaximo) {
+          mostrarToast(`Límite de stock alcanzado (${stockMaximo} unidades).`);
+          return;
+        }
+      }
+
       item.cantidad += delta;
 
       if (item.cantidad <= 0) {
@@ -1041,6 +1059,20 @@ function bindEvents() {
       }
     }
   });
+}
+
+function limpiarTodoAction() {
+  filtroLista.value = '';
+  filtroCategoria.value = '';
+  filtroSubcategoria.value = '';
+  searchInput.value = '';
+
+  actualizarCategorias();
+  filtrarProductos();
+
+  renderListasHorizontal();
+  cerrarFiltroDropdown();
+  actualizarUIFiltros();
 }
 
 /* ========================================
@@ -1390,6 +1422,9 @@ function actualizarUIFiltros() {
       badge.style.display = 'none';
     }
   }
+
+  // Renderizar filtros móviles en el drawer
+  renderFiltrosMobile();
 }
 
 function createFilterPill(container, labelText, onRemove) {
@@ -1422,3 +1457,185 @@ document.addEventListener('click', (e) => {
     cerrarFiltroDropdown();
   }
 });
+
+/* ========================================
+   MOBILE ACCORDION FILTERS IN DRAWER
+======================================== */
+
+function renderFiltrosMobile() {
+  const container = document.getElementById('mobileFiltrosContainer');
+  if (!container) return;
+
+  container.innerHTML = '';
+
+  // 1. Botón "Limpiar todos los filtros" si hay filtros activos
+  const activeFiltersCount = getActiveFiltersCount();
+  if (activeFiltersCount > 0) {
+    const btnLimpiar = document.createElement('button');
+    btnLimpiar.className = 'mobile-limpiar-btn';
+    btnLimpiar.innerHTML = `✕ Limpiar filtros (${activeFiltersCount})`;
+    btnLimpiar.addEventListener('click', () => {
+      limpiarTodoAction();
+      cerrarMenu();
+    });
+    container.appendChild(btnLimpiar);
+  }
+
+  // 2. Obtener listas del selector original
+  const listOptions = Array.from(filtroLista.options).filter(opt => opt.value !== '');
+
+  listOptions.forEach(listOpt => {
+    const listWrapper = document.createElement('div');
+    const isListActive = filtroLista.value === listOpt.value;
+    listWrapper.className = 'mobile-list-wrapper' + (isListActive ? ' active expanded' : '');
+
+    const listHeader = document.createElement('button');
+    listHeader.className = 'mobile-list-header';
+    listHeader.innerHTML = `
+      <span>${listOpt.text}</span>
+      <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="m6 9 6 6 6-6"/>
+      </svg>
+    `;
+    listWrapper.appendChild(listHeader);
+
+    // Contenedor de categorías
+    const catContainer = document.createElement('div');
+    catContainer.className = 'mobile-cat-container';
+    
+    // Si la lista está activa, mostrar sus categorías
+    if (isListActive) {
+      // Opción de "Ver todo en esta lista"
+      const allListOpt = document.createElement('button');
+      allListOpt.className = 'mobile-cat-item all-option';
+      allListOpt.textContent = `Ver todo en ${listOpt.text}`;
+      allListOpt.addEventListener('click', (e) => {
+        e.stopPropagation();
+        filtroLista.value = listOpt.value;
+        filtroCategoria.value = '';
+        filtroSubcategoria.value = '';
+        // Disparar evento para activar filtros en cascada
+        filtroLista.dispatchEvent(new Event('change'));
+        cerrarMenu();
+      });
+      catContainer.appendChild(allListOpt);
+
+      // Obtener categorías pertenecientes a la lista activa
+      const cats = [
+        ...new Set(
+          productos
+            .filter(p => p.lista === listOpt.value)
+            .map(p => p.categoria)
+            .filter(Boolean)
+        )
+      ].sort();
+
+      cats.forEach(cat => {
+        const catWrapper = document.createElement('div');
+        const isCatActive = filtroCategoria.value === cat;
+        catWrapper.className = 'mobile-cat-wrapper' + (isCatActive ? ' active expanded' : '');
+
+        const catHeader = document.createElement('button');
+        catHeader.className = 'mobile-cat-header';
+        catHeader.innerHTML = `
+          <span>${cat}</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="m9 18 6-6-6-6"/>
+          </svg>
+        `;
+        catWrapper.appendChild(catHeader);
+
+        const subContainer = document.createElement('div');
+        subContainer.className = 'mobile-subcat-container';
+
+        if (isCatActive) {
+          // Opción de "Ver todo en esta categoría"
+          const allCatOpt = document.createElement('button');
+          allCatOpt.className = 'mobile-subcat-item all-option';
+          allCatOpt.textContent = `Ver todo en ${cat}`;
+          allCatOpt.addEventListener('click', (e) => {
+            e.stopPropagation();
+            filtroLista.value = listOpt.value;
+            filtroCategoria.value = cat;
+            filtroSubcategoria.value = '';
+            // Disparar evento
+            filtroCategoria.dispatchEvent(new Event('change'));
+            cerrarMenu();
+          });
+          subContainer.appendChild(allCatOpt);
+
+          // Obtener subcategorías
+          const subs = [
+            ...new Set(
+              productos
+                .filter(p => p.lista === listOpt.value && p.categoria === cat)
+                .map(p => p.sub_categoria)
+                .filter(Boolean)
+            )
+          ].sort();
+
+          subs.forEach(sub => {
+            const isSubActive = filtroSubcategoria.value === sub;
+            const subBtn = document.createElement('button');
+            subBtn.className = 'mobile-subcat-item' + (isSubActive ? ' active' : '');
+            subBtn.textContent = sub;
+            subBtn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              filtroLista.value = listOpt.value;
+              filtroCategoria.value = cat;
+              filtroSubcategoria.value = sub;
+              // Disparar evento
+              filtroSubcategoria.dispatchEvent(new Event('change'));
+              cerrarMenu();
+            });
+            subContainer.appendChild(subBtn);
+          });
+        }
+
+        catHeader.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (isCatActive) {
+            filtroCategoria.value = '';
+            filtroSubcategoria.value = '';
+          } else {
+            filtroCategoria.value = cat;
+            filtroSubcategoria.value = '';
+          }
+          // Disparar evento de cambio en categoría para sincronizar
+          filtroCategoria.dispatchEvent(new Event('change'));
+          renderFiltrosMobile();
+        });
+
+        catWrapper.appendChild(subContainer);
+        catContainer.appendChild(catWrapper);
+      });
+    }
+
+    listHeader.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (isListActive) {
+        filtroLista.value = '';
+        filtroCategoria.value = '';
+        filtroSubcategoria.value = '';
+      } else {
+        filtroLista.value = listOpt.value;
+        filtroCategoria.value = '';
+        filtroSubcategoria.value = '';
+      }
+      filtroLista.dispatchEvent(new Event('change'));
+      renderFiltrosMobile();
+    });
+
+    listWrapper.appendChild(catContainer);
+    container.appendChild(listWrapper);
+  });
+}
+
+function getActiveFiltersCount() {
+  let count = 0;
+  if (searchInput.value.trim()) count++;
+  if (filtroLista.value) count++;
+  if (filtroCategoria.value) count++;
+  if (filtroSubcategoria.value) count++;
+  return count;
+}
