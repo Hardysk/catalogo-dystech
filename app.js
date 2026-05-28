@@ -389,6 +389,21 @@ function renderProductos(lista) {
           ? 'Stock limitado'
           : `Stock: ${producto.cantidad || 0}`;
 
+    // Validamos si el producto tiene estado "EcoTech"
+    const esEcoTech = producto.estado && producto.estado.toLowerCase() === 'ecotech';
+    
+    // Si es EcoTech, inyectamos el HTML impidiendo que el click "suba" al modal de detalles
+    const ecotechTagHTML = esEcoTech 
+      ? `<span class="ecotech-tag" 
+               data-tooltip="♻️ Producto EcoTech&#10;&#10;Este producto ha sido reutilizado y verificado técnicamente para extender su vida útil y reducir el impacto ambiental generado por los residuos electrónicos.&#10;&#10;Puede presentar detalles estéticos menores por uso previo, pero se encuentra en excelente estado funcional."
+               onclick="
+                 event.stopPropagation(); /* EVITA QUE SE ABRA EL MODAL DE DETALLES DEL PRODUCTO */
+                 alert('♻️ Producto EcoTech\\n\\nEste producto ha sido reutilizado y verificado técnicamente para extender su vida útil y reducir el impacto ambiental generado por los residuos electrónicos.\\n\\nPuede presentar detalles estéticos menores por uso previo, pero se encuentra en excelente estado funcional.');
+               ">
+          EcoTech
+         </span>`
+      : '';
+
     const card = document.createElement('div');
 
     card.className = 'card';
@@ -397,15 +412,13 @@ function renderProductos(lista) {
 
       <div class="card-img-wrapper">
 
+        ${ecotechTagHTML}
+
         <img
           class="card-img"
-
           src="${obtenerImagenProducto(producto)}"
-
           alt="${producto.nombre || ''}"
-
           loading="lazy"
-
           onerror="
             this.onerror=null;
             this.src='https://placehold.co/400x300/e2e8f0/94a3b8?text=' + encodeURIComponent('${producto.nombre || 'DYSTECH'}');
@@ -450,6 +463,9 @@ function renderProductos(lista) {
 
     productosGrid.appendChild(card);
   });
+
+
+
 }
 
 // ─── Modal Producto ───

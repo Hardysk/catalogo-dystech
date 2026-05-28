@@ -557,7 +557,7 @@ img { display: block; max-width: 100%; }
   padding: 4px 10px;
   border-radius: var(--r-full);
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 400; /*700*/
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
@@ -612,7 +612,7 @@ img { display: block; max-width: 100%; }
 
 .card-price {
   font-size: 18px;
-  font-weight: 700;
+  font-weight: 400; /*700*/
   color: var(--emerald);
 }
 
@@ -873,7 +873,7 @@ img { display: block; max-width: 100%; }
 
 .add-to-cart-btn svg {
   width: 18px;
-  height: 18px;
+  height: 30px;
 }
 
 /* ---------- CART DRAWER ---------- */
@@ -3076,4 +3076,117 @@ img { display: block; max-width: 100%; }
   border-color: transparent;
   box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
   font-weight: 600;
+}
+
+
+/* ---------- ETIQUETA ECOTECH Y TOOLTIP DEFINITIVO (MÓVIL INFERIOR) ---------- */
+
+/* Estilo base de la etiqueta EcoTech (Para computadoras - Superior Izquierda) */
+.card-img-wrapper .ecotech-tag {
+  position: absolute;
+  top: 12px;       /* En PC se queda arriba */
+  left: 12px;
+  z-index: 90;
+  padding: 4px 10px;
+  border-radius: var(--r-full);
+  font-size: 11px;
+  font-weight: 700;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  background: rgba(16, 185, 129, 0.95);
+  color: #ffffff;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  cursor: help;
+}
+
+/* --- COMPORTAMIENTO PARA COMPUTADORAS (PANTALLAS GRANDES) --- */
+@media (min-width: 769px) {
+  .card:hover .card-img-wrapper {
+    overflow: visible !important;
+  }
+
+  .ecotech-tag[data-tooltip] {
+    position: absolute;
+  }
+
+  /* Despliegue del mensaje hacia abajo en PC */
+  .ecotech-tag[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 0;
+    width: 260px;
+    padding: 14px;
+    background: #0f172a;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.5;
+    text-align: left;
+    white-space: pre-wrap;
+    border-radius: var(--r-md);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    z-index: 999999 !important;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px);
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+    pointer-events: none;
+  }
+
+  .ecotech-tag[data-tooltip]::before {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 20px;
+    border-width: 6px;
+    border-style: solid;
+    border-color: transparent transparent #0f172a transparent;
+    z-index: 999999 !important;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s;
+    pointer-events: none;
+  }
+
+  .ecotech-tag:hover::after {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+
+  .ecotech-tag:hover::before {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+/* --- COMPORTAMIENTO ADAPTADO PARA MÓVILES (PANTALLAS CHICAS) --- */
+@media (max-width: 768px) {
+  .card-img-wrapper .ecotech-tag {
+    top: auto !important;     /* Cancelamos la alineación superior */
+    bottom: 12px;             /* ¡BAJA A LA PARTE INFERIOR DE LA IMAGEN! */
+    left: 12px;               /* Pegado al borde izquierdo */
+    
+    background: #10b981;      /* Verde esmeralda sólido nítido */
+    font-size: 10px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    z-index: 95;              /* Prioridad alta de pulsación con el dedo */
+  }
+
+  /* El stock regresa a su lugar normal arriba a la derecha en móviles */
+  /* Ya no necesita estar desplazado porque EcoTech se fue hacia abajo */
+  .card-img-wrapper .stock-tag {
+    top: 12px !important;
+    font-size: 10px !important;
+  }
+
+  /* Ocultamos los tooltips flotantes en celular para que no estorben */
+  .ecotech-tag[data-tooltip]::after,
+  .ecotech-tag[data-tooltip]::before {
+    display: none !important;
+  }
 }
