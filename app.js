@@ -800,11 +800,15 @@ function comprarWhatsApp() {
 
 function obtenerImagenProducto(producto) {
 
-  if (producto.imagen) {
+  if (producto && producto.codigo) {
+    return `https://qtxxgapxvlwapeaxhige.supabase.co/storage/v1/object/public/imagenes-productos/${producto.codigo}.webp`;
+  }
+
+  if (producto && producto.imagen) {
     return producto.imagen;
   }
 
-  return `/Imagenes/${producto.codigo}.jpg`;
+  return '';
 }
 
 // ─── Helpers ───
