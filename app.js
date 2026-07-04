@@ -404,6 +404,10 @@ function renderProductos(lista) {
          </span>`
       : '';
 
+    const agotadoOverlayHTML = producto.cantidad <= 0
+      ? '<div class="agotado-overlay">AGOTADO</div>'
+      : '';
+
     const card = document.createElement('div');
 
     card.className = 'card';
@@ -413,6 +417,7 @@ function renderProductos(lista) {
       <div class="card-img-wrapper">
 
         ${ecotechTagHTML}
+        ${agotadoOverlayHTML}
 
         <img
           class="card-img"
@@ -540,6 +545,39 @@ function abrirModal(producto) {
 
   qtyInput.max = producto.cantidad || 1;
 
+  // Control de producto agotado
+  const existingOverlay = modalImg.parentNode.querySelector('.agotado-overlay');
+  if (existingOverlay) {
+    existingOverlay.remove();
+  }
+
+  if (producto.cantidad <= 0) {
+    const overlay = document.createElement('div');
+    overlay.className = 'agotado-overlay';
+    overlay.textContent = 'AGOTADO';
+    modalImg.parentNode.appendChild(overlay);
+
+    addToCartBtn.disabled = true;
+    addToCartBtn.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="9" cy="21" r="1"/>
+        <circle cx="20" cy="21" r="1"/>
+        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+      </svg>
+      Sin stock
+    `;
+  } else {
+    addToCartBtn.disabled = false;
+    addToCartBtn.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="9" cy="21" r="1"/>
+        <circle cx="20" cy="21" r="1"/>
+        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+      </svg>
+      Agregar al carrito
+    `;
+  }
+
   modalOverlay.classList.add('open');
 
   document.body.style.overflow = 'hidden';
@@ -559,6 +597,7 @@ function cerrarModal() {
 function agregarAlCarrito() {
 
   if (!productoActual) return;
+  if (productoActual.cantidad <= 0) return;
 
   let cantidad = parseInt(qtyInput.value) || 1;
   if (cantidad < 1) {
