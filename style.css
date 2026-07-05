@@ -3216,6 +3216,8 @@ img { display: block; max-width: 100%; }
   font-family: 'Inter', sans-serif;
   text-transform: uppercase;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+
+  transform: rotate(-25deg);
 }
 
 .add-to-cart-btn:disabled,
