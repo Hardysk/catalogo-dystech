@@ -357,12 +357,19 @@ function filtrarProductos() {
 
 function renderProductos(lista) {
 
+  // Omitir productos Ecotech agotados (cantidad <= 0)
+  const listaFiltrada = lista.filter(producto => {
+    const esEcotech = (producto.clasificacion && producto.clasificacion.toLowerCase() === 'ecotech') || 
+                      (producto.estado && producto.estado.toLowerCase() === 'ecotech');
+    return !(esEcotech && producto.cantidad <= 0);
+  });
+
   productosGrid.innerHTML = '';
 
   productCount.textContent =
-    `${lista.length} producto${lista.length !== 1 ? 's' : ''}`;
+    `${listaFiltrada.length} producto${listaFiltrada.length !== 1 ? 's' : ''}`;
 
-  if (lista.length === 0) {
+  if (listaFiltrada.length === 0) {
 
     productosGrid.innerHTML = `
       <div class="state-msg">
@@ -373,7 +380,7 @@ function renderProductos(lista) {
     return;
   }
 
-  lista.forEach(producto => {
+  listaFiltrada.forEach(producto => {
 
     const stockClass =
       producto.cantidad <= 5
