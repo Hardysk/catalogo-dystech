@@ -153,7 +153,7 @@ async function cargarProductos() {
     const { data, error } = await supabaseClient
       .from('productos')
       .select('*')
-      .order('nombre');
+      .order('id', { ascending: false });
 
     if (error) throw error;
 
