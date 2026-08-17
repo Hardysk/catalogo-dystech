@@ -80,6 +80,7 @@ const logoLink = document.getElementById('logoLink');
 
 let productos      = [];
 let productoActual = null;
+let filtroEcotechActivo = false;
 
 let carrito = JSON.parse(
   localStorage.getItem('dystech_carrito') || '[]'
@@ -294,6 +295,15 @@ function actualizarSubcategorias() {
 
 // ─── Filtrar Productos ───
 
+function esProductoEcotech(producto) {
+
+  return (
+    (producto.clasificacion || '').toLowerCase() === 'ecotech'
+    ||
+    (producto.estado || '').toLowerCase() === 'ecotech'
+  );
+}
+
 function filtrarProductos() {
 
   let filtrados = [...productos];
@@ -320,6 +330,12 @@ function filtrarProductos() {
     filtrados = filtrados.filter(
       p => p.sub_categoria === filtroSubcategoria.value
     );
+  }
+
+  // EcoTech
+  if (filtroEcotechActivo) {
+
+    filtrados = filtrados.filter(esProductoEcotech);
   }
 
   // Search
@@ -359,9 +375,7 @@ function renderProductos(lista) {
 
   // Omitir productos Ecotech agotados (cantidad <= 0)
   const listaFiltrada = lista.filter(producto => {
-    const esEcotech = (producto.clasificacion && producto.clasificacion.toLowerCase() === 'ecotech') || 
-                      (producto.estado && producto.estado.toLowerCase() === 'ecotech');
-    return !(esEcotech && producto.cantidad <= 0);
+    return !(esProductoEcotech(producto) && producto.cantidad <= 0);
   });
 
   productosGrid.innerHTML = '';
@@ -397,7 +411,7 @@ function renderProductos(lista) {
           : `Stock: ${producto.cantidad || 0}`;
 
     // Validamos si el producto tiene estado "EcoTech"
-    const esEcoTech = producto.estado && producto.estado.toLowerCase() === 'ecotech';
+    const esEcoTech = esProductoEcotech(producto);
     
     // Si es EcoTech, inyectamos el HTML impidiendo que el click "suba" al modal de detalles
     const ecotechTagHTML = esEcoTech 
@@ -1079,6 +1093,8 @@ function bindEvents() {
 
     filtroSubcategoria.value = '';
 
+    filtroEcotechActivo = false;
+
     searchInput.value = '';
 
     actualizarCategorias();
@@ -1131,6 +1147,7 @@ function limpiarTodoAction() {
   filtroLista.value = '';
   filtroCategoria.value = '';
   filtroSubcategoria.value = '';
+  filtroEcotechActivo = false;
   searchInput.value = '';
 
   actualizarCategorias();
@@ -1188,6 +1205,18 @@ function renderListasHorizontal() {
 
     listaTabs.appendChild(btn);
   });
+
+  // Botón independiente para filtrar productos EcoTech
+  const btnEcotech = document.createElement('button');
+  btnEcotech.className = 'tab-btn' + (filtroEcotechActivo ? ' active' : '');
+  btnEcotech.textContent = 'EcoTech';
+  btnEcotech.addEventListener('click', () => {
+    filtroEcotechActivo = !filtroEcotechActivo;
+    filtrarProductos();
+    cerrarFiltroDropdown();
+    renderListasHorizontal();
+  });
+  listaTabs.appendChild(btnEcotech);
 }
 
 function toggleListDropdown(listVal, buttonEl) {
@@ -1453,7 +1482,17 @@ function actualizarUIFiltros() {
     });
   }
 
-  // 3. Categoría
+  // 3. EcoTech
+  if (filtroEcotechActivo) {
+    activeCount++;
+    createFilterPill(pillsCont, 'EcoTech', () => {
+      filtroEcotechActivo = false;
+      filtrarProductos();
+      renderListasHorizontal();
+    });
+  }
+
+  // 4. Categoría
   if (filtroCategoria.value) {
     activeCount++;
     createFilterPill(pillsCont, `Categoría: ${filtroCategoria.value}`, () => {
@@ -1463,7 +1502,7 @@ function actualizarUIFiltros() {
     });
   }
 
-  // 4. Subcategoría
+  // 5. Subcategoría
   if (filtroSubcategoria.value) {
     activeCount++;
     createFilterPill(pillsCont, `Subcategoría: ${filtroSubcategoria.value}`, () => {
@@ -1703,5 +1742,6 @@ function getActiveFiltersCount() {
   if (filtroLista.value) count++;
   if (filtroCategoria.value) count++;
   if (filtroSubcategoria.value) count++;
+  if (filtroEcotechActivo) count++;
   return count;
 }
