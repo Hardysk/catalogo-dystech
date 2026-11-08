@@ -552,7 +552,7 @@ img { display: block; max-width: 100%; }
 
 .card-img-wrapper .stock-tag {
   position: absolute;
-  top: 12px;
+  bottom: 12px;
   right: 12px;
   padding: 4px 10px;
   border-radius: var(--r-full);
@@ -3179,10 +3179,11 @@ img { display: block; max-width: 100%; }
     z-index: 95;              /* Prioridad alta de pulsación con el dedo */
   }
 
-  /* El stock regresa a su lugar normal arriba a la derecha en móviles */
-  /* Ya no necesita estar desplazado porque EcoTech se fue hacia abajo */
+  /* El stock permanece abajo a la derecha, también en móviles */
   .card-img-wrapper .stock-tag {
-    top: 12px !important;
+    top: auto !important;
+    bottom: 12px !important;
+    right: 12px !important;
     font-size: 10px !important;
   }
 
